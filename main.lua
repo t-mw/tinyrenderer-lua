@@ -171,6 +171,7 @@ end
 
 local function drawModel(modelPath)
     local faces, verts = parseObj(modelPath)
+    local lightDir = { 0, 0, -1 }
 
     function transformVToScreenSpace(v)
         return {(v[1] + 1) * WIDTH / 2, (v[2] + 1) * HEIGHT / 2}
@@ -180,7 +181,14 @@ local function drawModel(modelPath)
         local v0 = verts[face.verts[1]]
         local v1 = verts[face.verts[2]]
         local v2 = verts[face.verts[3]]
-        triangle(transformVToScreenSpace(v0), transformVToScreenSpace(v1), transformVToScreenSpace(v2), {r=255, g=255, b=255, a=255})
+        local n = normalizeV3(crossV3(subV3(v2, v0), subV3(v1, v0)))
+        local intensity = math.max(0, dotV3(n, lightDir))
+        triangle(
+            transformVToScreenSpace(v0),
+            transformVToScreenSpace(v1),
+            transformVToScreenSpace(v2),
+            {r=intensity * 255, g=intensity * 255, b=intensity * 255, a=255}
+        )
     end
 end
 
