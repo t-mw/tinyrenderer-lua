@@ -91,6 +91,31 @@ function orderPointsBy(p0, p1, p2, dimIdx)
     return lowP, midP, highP
 end
 
+local function subV3(v0, v1)
+    return { v0[1] - v1[1], v0[2] - v1[2], v0[3] - v1[3] }
+end
+
+local function crossV3(v0, v1)
+    return {
+        v0[2] * v1[3] - v0[3] * v1[2],
+        v0[3] * v1[1] - v0[1] * v1[3],
+        v0[1] * v1[2] - v0[2] * v1[1]
+    }
+end
+
+local function dotV3(v0, v1)
+    return v0[1] * v1[1] + v0[2] * v1[2] + v0[3] * v1[3]
+end
+
+local function lenV3(v)
+    return math.sqrt(dotV3(v, v))
+end
+
+local function normalizeV3(v)
+    local len = lenV3(v)
+    return { v[1] / len, v[2] / len, v[3] / len }
+end
+
 function triangle(v0, v1, v2, color)
     local yIdx = 2
     local lowV, midV, highV = orderPointsBy(v0, v1, v2, yIdx)
