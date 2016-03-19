@@ -136,47 +136,22 @@ local function getZ(x, y)
 end
 
 function triangle(v0, v1, v2, color)
-    local yIdx = 2
-    local lowV, midV, highV = orderPointsBy(v0, v1, v2, yIdx)
-    local fracY = (midV[2] - lowV[2]) / (highV[2] - lowV[2])
-    local midVFrac = {lowV[1] + fracY * (highV[1] - lowV[1]), midV[2]}
-
-    for y = lowV[2], midV[2] do
-        local subFracY = (y - lowV[2]) / (midV[2] - lowV[2])
-        local x1 = round(lowV[1] + subFracY * (midVFrac[1] - lowV[1]))
-        local x2 = round(lowV[1] + subFracY * (midV[1] - lowV[1]))
-        for x = math.min(x1, x2), math.max(x1, x2) do
+    local xIdx, yIdx = 1, 2
+    local minXV, _, maxXV = orderPointsBy(v0, v1, v2, xIdx)
+    local minYV, _, maxYV = orderPointsBy(v0, v1, v2, yIdx)
+    for x = math.floor(minXV[xIdx]), math.ceil(maxXV[xIdx]) do
+        for y = math.floor(minYV[yIdx]), math.ceil(maxYV[yIdx]) do
             local bcScreen = barycentric(v0, v1, v2, {x, y})
-            local z =
-                bcScreen[1] * v0[3] +
-                bcScreen[2] * v1[3] +
-                bcScreen[3] * v2[3]
-            local xInt = x
-            local yInt = round(y)
-            local existingZ = getZ(xInt, yInt)
-            if (existingZ == nil or existingZ < z) then
-                setZ(xInt, yInt, z)
-                drawPoint(xInt, yInt, color)
-            end
-        end
-    end
-
-    for y = midV[2], highV[2] do
-        local subFracY = (y - midV[2]) / (highV[2] - midV[2])
-        local x1 = round(midVFrac[1] + subFracY * (highV[1] - midVFrac[1]))
-        local x2 = round(midV[1] + subFracY * (highV[1] - midV[1]))
-        for x = math.min(x1, x2), math.max(x1, x2) do
-            local bcScreen = barycentric(v0, v1, v2, {x, y})
-            local z =
-                bcScreen[1] * v0[3] +
-                bcScreen[2] * v1[3] +
-                bcScreen[3] * v2[3]
-            local xInt = x
-            local yInt = round(y)
-            local existingZ = getZ(xInt, yInt)
-            if (existingZ == nil or existingZ < z) then
-                setZ(xInt, yInt, z)
-                drawPoint(xInt, yInt, color)
+            if (bcScreen[1] >= 0 and bcScreen[2] >= 0 and bcScreen[3] >= 0) then
+                local z =
+                    bcScreen[1] * v0[3] +
+                    bcScreen[2] * v1[3] +
+                    bcScreen[3] * v2[3]
+                local existingZ = getZ(x, y)
+                if (existingZ == nil or z > existingZ) then
+                    setZ(x, y, z)
+                    drawPoint(x, y, color)
+                end
             end
         end
     end
