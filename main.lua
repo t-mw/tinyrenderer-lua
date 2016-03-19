@@ -116,6 +116,25 @@ local function normalizeV3(v)
     return { v[1] / len, v[2] / len, v[3] / len }
 end
 
+function barycentric(v0, v1, v2, p)
+    local u = crossV3({ v2[1]-v0[1], v1[1]-v0[1], v0[1]-p[1] }, { v2[2]-v0[2], v1[2]-v0[2], v0[2]-p[2] })
+    if math.abs(u[3]) < 1 then
+        return { -1, 1, 1 } -- triangle is degenerate
+    else
+        return { 1.0 - (u[1] + u[2]) / u[3], u[2] / u[3], u[1] / u[3] }
+    end
+end
+
+local zBuffer = {}
+
+local function setZ(x, y, z)
+    zBuffer[x + y * HEIGHT] = z
+end
+
+local function getZ(x, y)
+    return zBuffer[x + y * HEIGHT]
+end
+
 function triangle(v0, v1, v2, color)
     local yIdx = 2
     local lowV, midV, highV = orderPointsBy(v0, v1, v2, yIdx)
@@ -127,7 +146,18 @@ function triangle(v0, v1, v2, color)
         local x1 = round(lowV[1] + subFracY * (midVFrac[1] - lowV[1]))
         local x2 = round(lowV[1] + subFracY * (midV[1] - lowV[1]))
         for x = math.min(x1, x2), math.max(x1, x2) do
-            drawPoint(x, y, color)
+            local bcScreen = barycentric(v0, v1, v2, {x, y})
+            local z =
+                bcScreen[1] * v0[3] +
+                bcScreen[2] * v1[3] +
+                bcScreen[3] * v2[3]
+            local xInt = x
+            local yInt = round(y)
+            local existingZ = getZ(xInt, yInt)
+            if (existingZ == nil or existingZ < z) then
+                setZ(xInt, yInt, z)
+                drawPoint(xInt, yInt, color)
+            end
         end
     end
 
@@ -136,7 +166,18 @@ function triangle(v0, v1, v2, color)
         local x1 = round(midVFrac[1] + subFracY * (highV[1] - midVFrac[1]))
         local x2 = round(midV[1] + subFracY * (highV[1] - midV[1]))
         for x = math.min(x1, x2), math.max(x1, x2) do
-            drawPoint(x, y, color)
+            local bcScreen = barycentric(v0, v1, v2, {x, y})
+            local z =
+                bcScreen[1] * v0[3] +
+                bcScreen[2] * v1[3] +
+                bcScreen[3] * v2[3]
+            local xInt = x
+            local yInt = round(y)
+            local existingZ = getZ(xInt, yInt)
+            if (existingZ == nil or existingZ < z) then
+                setZ(xInt, yInt, z)
+                drawPoint(xInt, yInt, color)
+            end
         end
     end
 end
@@ -174,7 +215,7 @@ local function drawModel(modelPath)
     local lightDir = { 0, 0, -1 }
 
     function transformVToScreenSpace(v)
-        return {(v[1] + 1) * WIDTH / 2, (v[2] + 1) * HEIGHT / 2}
+        return { (v[1] + 1) * WIDTH / 2, (v[2] + 1) * HEIGHT / 2, v[3] }
     end
 
     for _, face in ipairs(faces) do
