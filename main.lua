@@ -2,6 +2,11 @@
 local SDL= require "SDL"
 local image= require "SDL.image"
 
+local PERSP_C = 4 -- camera z distance from origin for simple perspective projection
+local MODEL_PATH = 'obj/african_head.obj'
+local WINDOW_WIDTH = 640
+local WINDOW_HEIGHT = 640
+
 local ret, err = SDL.init { SDL.flags.Video }
 if not ret then
     error(err)
@@ -12,12 +17,10 @@ if not ret then
     error(err)
 end
 
-WIDTH = 640
-HEIGHT = 640
 local win, err = SDL.createWindow {
     title="Image",
-    width=WIDTH,
-    height=HEIGHT
+    width=WINDOW_WIDTH,
+    height=WINDOW_HEIGHT
 }
 
 if not win then
@@ -29,16 +32,15 @@ if not rdr then
     error(err)
 end
 
-MODEL_PATH = 'obj/african_head.obj'
-
 function drawPoint(x, y, color)
     rdr:setDrawColor(color)
     -- invert y-coordinate to set origin to bottom-left corner of screen
-    rdr:drawPoint({x=x, y=HEIGHT-y})
+    rdr:drawPoint({x=x, y=WINDOW_HEIGHT-y})
 end
- function round(v)
-     return math.floor(v+0.5)
- end
+
+function round(v)
+    return math.floor(v+0.5)
+end
 
 function line(v0, v1, color)
     local x0 = v0[1]
@@ -91,11 +93,11 @@ function orderPointsBy(p0, p1, p2, dimIdx)
     return lowP, midP, highP
 end
 
-local function subV3(v0, v1)
+function subV3(v0, v1)
     return { v0[1] - v1[1], v0[2] - v1[2], v0[3] - v1[3] }
 end
 
-local function crossV3(v0, v1)
+function crossV3(v0, v1)
     return {
         v0[2] * v1[3] - v0[3] * v1[2],
         v0[3] * v1[1] - v0[1] * v1[3],
@@ -103,15 +105,15 @@ local function crossV3(v0, v1)
     }
 end
 
-local function dotV3(v0, v1)
+function dotV3(v0, v1)
     return v0[1] * v1[1] + v0[2] * v1[2] + v0[3] * v1[3]
 end
 
-local function lenV3(v)
+function lenV3(v)
     return math.sqrt(dotV3(v, v))
 end
 
-local function normalizeV3(v)
+function normalizeV3(v)
     local len = lenV3(v)
     return { v[1] / len, v[2] / len, v[3] / len }
 end
@@ -127,12 +129,12 @@ end
 
 local zBuffer = {}
 
-local function setZ(x, y, z)
-    zBuffer[x + y * HEIGHT] = z
+function setZ(x, y, z)
+    zBuffer[x + y * WINDOW_HEIGHT] = z
 end
 
-local function getZ(x, y)
-    return zBuffer[x + y * HEIGHT]
+function getZ(x, y)
+    return zBuffer[x + y * WINDOW_HEIGHT]
 end
 
 function triangle(v0, v1, v2, color)
@@ -185,17 +187,16 @@ function parseObj(path)
     return faces, verts
 end
 
-local function drawModel(modelPath)
+function drawModel(modelPath)
     local faces, verts = parseObj(modelPath)
     local lightDir = { 0, 0, -1 }
 
-    function transformVToScreenSpace(v)
-        local c = 4
-        local x = v[1] / (1 - v[3] / c)
-        local y = v[2] / (1 - v[3] / c)
-        local z = v[3] / (1 - v[3] / c)
-        local xScaled = (x + 1) * WIDTH / 2
-        local yScaled = (y + 1) * HEIGHT / 2
+    local function transformVToScreenSpace(v)
+        local x = v[1] / (1 - v[3] / PERSP_C)
+        local y = v[2] / (1 - v[3] / PERSP_C)
+        local z = v[3] / (1 - v[3] / PERSP_C)
+        local xScaled = (x + 1) * WINDOW_WIDTH / 2
+        local yScaled = (y + 1) * WINDOW_HEIGHT / 2
         return { xScaled, yScaled, z }
     end
 
