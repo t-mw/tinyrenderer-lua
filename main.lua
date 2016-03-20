@@ -190,7 +190,13 @@ local function drawModel(modelPath)
     local lightDir = { 0, 0, -1 }
 
     function transformVToScreenSpace(v)
-        return { (v[1] + 1) * WIDTH / 2, (v[2] + 1) * HEIGHT / 2, v[3] }
+        local c = 4
+        local x = v[1] / (1 - v[3] / c)
+        local y = v[2] / (1 - v[3] / c)
+        local z = v[3] / (1 - v[3] / c)
+        local xScaled = (x + 1) * WIDTH / 2
+        local yScaled = (y + 1) * HEIGHT / 2
+        return { xScaled, yScaled, z }
     end
 
     for _, face in ipairs(faces) do
